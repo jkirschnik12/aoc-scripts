@@ -1,6 +1,7 @@
 #!/usr/bin/env bb
 (require '[babashka.curl :as curl])
 (require '[clojure.tools.cli :refer [parse-opts]])
+(require '[clojure.edn :as edn])
 
 (def cli-options
   [["-y" "--year YEAR" "Year to fetch input from"
@@ -15,13 +16,15 @@
     :default "input.txt"]
    ["-h" "--help"]])
 
-(def cookie "TODO: COOKIE HERE PUT IN CONFIG FILE EVENTUALLY")
-
-(let [{:keys [options summary]} (parse-opts *command-line-args* cli-options)
+(let [config (slurp "config.edn")
+      {:keys [cookie]} (edn/read-string config)
+      {:keys [options summary]} (parse-opts *command-line-args* cli-options)
       {:keys [year day output help]} options]
+  
   (when help
     (println summary)
     (System/exit 0))
-  (->> (curl/get (str "https://adventofcode.com/" year "/day/" day "/input") {:headers {"Cookie" cookie}})
+  (->> (curl/get (str "https://adventofcode.com/" year "/day/" day "/input") {:headers {"Cookie" (str "session=" cookie)}})
        :body
-       (spit output)))
+       (spit output))
+  "SUCCESS")
